@@ -4,20 +4,30 @@
     <title>RPG</title>
     <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
     <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        .unselected-button {
+            font-weight: normal;
+            color: black;
+        }
+
+        .selected-button {
+            font-weight: bold;
+            color: red;
+        }
+    </style>
 </head>
 <body>
 <h1>RPG admin panel</h1>
 <h2>Accounts list:</h2>
 <div>
-    <p>
-        <label for="page-count-selector">Count per page:</label>
-        <select id="page-count-selector">
-            <option typeof="numeric" value=3 selected="selected">3</option>
-            <option typeof="numeric" value=5>5</option>
-            <option typeof="numeric" value=10>10</option>
-            <option typeof="numeric" value=20>20</option>
-        </select>
-    </p>
+    <label for="count-per-page-selector">Count per page:</label>
+    <select id="count-per-page-selector"
+            onchange="count_per_page = this.value; renderTable(last_visited_page, this.value); pages=get_pages(); generateButtons(document.getElementById('pages'))">
+        <option typeof="numeric" value=3 selected="selected">3</option>
+        <option typeof="numeric" value=5>5</option>
+        <option typeof="numeric" value=10>10</option>
+        <option typeof="numeric" value=20>20</option>
+    </select>
 </div>
 <table id="admin-table">
     <thead>
@@ -33,16 +43,19 @@
     </tr>
     </thead>
 </table>
-<div>
-    <p>Pages:</p>
-
-</div>
+<div id="pages">Pages:</div>
 <script>
-    function get_players_count(players_count) {
+    const players_count = get_players_count()
+    let count_per_page = get_count_per_page()
+    let pages = get_pages()
+    let last_visited_page = 0
+
+    function get_players_count() {
+        let players_count
         $.ajax({
             type: "GET",
             url: "/rest/players/count",
-            success: function(data) {
+            success: function (data) {
                 players_count = data
             },
             async: false
@@ -50,33 +63,70 @@
         return players_count
     }
 
-    function get_pages(players_count) {
-        const page_count_selector = document.getElementById("page-count-selector");
-        const value = parseInt(page_count_selector.value);
-        return Math.floor(players_count / value)
+    function get_count_per_page() {
+        return parseInt(document.getElementById("count-per-page-selector").value);
+    }
+
+    function get_pages() {
+        return Math.ceil(players_count / count_per_page)
+    }
+
+    function removeExtraPageContent() {
+        const table = document.getElementById("admin-table");
+        let elementsByTagName = table.getElementsByTagName("tbody");
+        if (elementsByTagName.length > 0) {
+            table.removeChild(elementsByTagName[0]);
+        }
+    }
+
+    function markCurrentPageButton(page_number) {
+        document.getElementById("button-" + last_visited_page).classList.remove('selected-button')
+        document.getElementById("button-" + page_number).classList.add('selected-button')
+        last_visited_page = page_number
+    }
+
+    function putDataToTable(page_number, page_size) {
+        $.getJSON('/rest/players', {pageNumber: page_number, pageSize: page_size}, function (data) {
+            const tbody = document.createElement("tbody");
+            let odd = false;
+            $.each(data, function () {
+                const tr = tbody.insertRow();
+                tr.className = odd ? "odd" : "even";
+                $.each(this, function (k, v) {
+                    const cell = tr.insertCell();
+                    cell.appendChild(document.createTextNode(v.toString()));
+                });
+                odd = !odd;
+            });
+            $("#admin-table").append(tbody);
+        });
+    }
+
+    function renderTable(page_number, page_size) {
+        removeExtraPageContent();
+        markCurrentPageButton(page_number);
+        putDataToTable(page_number, page_size);
     }
 
     $(function () {
-        $.getJSON('/rest/players', function (data) {
-            let players_count
-            players_count = get_players_count(players_count)
-            const pages = get_pages(players_count)
-            // alert(players_count + "->" + pages)
-
-            const tbl_body = document.createElement("tbody");
-            let odd_even = false;
-            $.each(data, function () {
-                const tbl_row = tbl_body.insertRow();
-                tbl_row.className = odd_even ? "odd" : "even";
-                $.each(this, function (k, v) {
-                    const cell = tbl_row.insertCell();
-                    cell.appendChild(document.createTextNode(v.toString()));
-                });
-                odd_even = !odd_even;
-            });
-            $("#admin-table").append(tbl_body);
-        });
+        generateButtons(document.getElementById('pages'))
+        renderTable(0);
     });
+
+    function generateButtons(context) {
+        const div = document.getElementById("pages");
+        div.innerHTML = 'Pages:';
+        for (let i = 0; i < pages; i++) {
+            const button = document.createElement("input");
+            button.id = "button-" + i;
+            button.type = "button";
+            button.value = i + '';
+            button.onclick = function () {
+                renderTable(i, count_per_page)
+            }
+            context.appendChild(button);
+        }
+    }
 </script>
 </body>
 </html>
