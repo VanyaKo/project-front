@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <title>RPG</title>
     <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
@@ -7,6 +8,17 @@
 <body>
 <h1>RPG admin panel</h1>
 <h2>Accounts list:</h2>
+<div>
+    <p>
+        <label for="page-count-selector">Count per page:</label>
+        <select id="page-count-selector">
+            <option typeof="numeric" value=3 selected="selected">3</option>
+            <option typeof="numeric" value=5>5</option>
+            <option typeof="numeric" value=10>10</option>
+            <option typeof="numeric" value=20>20</option>
+        </select>
+    </p>
+</div>
 <table id="admin-table">
     <thead>
     <tr>
@@ -21,9 +33,36 @@
     </tr>
     </thead>
 </table>
+<div>
+    <p>Pages:</p>
+
+</div>
 <script>
+    function get_players_count(players_count) {
+        $.ajax({
+            type: "GET",
+            url: "/rest/players/count",
+            success: function(data) {
+                players_count = data
+            },
+            async: false
+        });
+        return players_count
+    }
+
+    function get_pages(players_count) {
+        const page_count_selector = document.getElementById("page-count-selector");
+        const value = parseInt(page_count_selector.value);
+        return Math.floor(players_count / value)
+    }
+
     $(function () {
         $.getJSON('/rest/players', function (data) {
+            let players_count
+            players_count = get_players_count(players_count)
+            const pages = get_pages(players_count)
+            // alert(players_count + "->" + pages)
+
             const tbl_body = document.createElement("tbody");
             let odd_even = false;
             $.each(data, function () {
