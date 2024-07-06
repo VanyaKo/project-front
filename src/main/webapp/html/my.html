@@ -2,10 +2,42 @@
 <head>
     <title>RPG</title>
     <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
-    <link href="/css/my.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
 </head>
 <body>
 <h1>RPG admin panel</h1>
-
+<h2>Accounts list:</h2>
+<table id="admin-table">
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Title</th>
+        <th>Race</th>
+        <th>Profession</th>
+        <th>Level</th>
+        <th>Birthday</th>
+        <th>Banned</th>
+    </tr>
+    </thead>
+</table>
+<script>
+    $(function () {
+        $.getJSON('/rest/players', function (data) {
+            const tbl_body = document.createElement("tbody");
+            let odd_even = false;
+            $.each(data, function () {
+                const tbl_row = tbl_body.insertRow();
+                tbl_row.className = odd_even ? "odd" : "even";
+                $.each(this, function (k, v) {
+                    const cell = tbl_row.insertCell();
+                    cell.appendChild(document.createTextNode(v.toString()));
+                });
+                odd_even = !odd_even;
+            });
+            $("#admin-table").append(tbl_body);
+        });
+    });
+</script>
 </body>
 </html>
