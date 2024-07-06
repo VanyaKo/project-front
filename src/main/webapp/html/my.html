@@ -40,6 +40,8 @@
         <th>Level</th>
         <th>Birthday</th>
         <th>Banned</th>
+        <th>Edit</th>
+        <th>Delete</th>
     </tr>
     </thead>
 </table>
@@ -96,10 +98,32 @@
                     const cell = tr.insertCell();
                     cell.appendChild(document.createTextNode(v.toString()));
                 });
+                let img = document.createElement('img');
+                img.id = this.id
+                img.src = "/img/edit.png";
+                img.onclick = editUser
+                let cell = tr.insertCell();
+                cell.appendChild(img);
+
+                img = document.createElement('img');
+                img.id = this.id
+                img.src = "/img/delete.png";
+                img.onclick = deleteUser
+                cell = tr.insertCell();
+                cell.appendChild(img);
+
                 odd = !odd;
             });
             $("#admin-table").append(tbody);
         });
+    }
+
+    function editUser() {
+
+    }
+
+    function deleteUser() {
+        $.delete(`/rest/players/${this.id}`)
     }
 
     function renderTable(page_number, page_size) {
