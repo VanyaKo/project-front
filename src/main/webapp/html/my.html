@@ -136,6 +136,71 @@
     }
 
     function editUser() {
+        const row = document.getElementById('row-' + this.id)
+
+        const name_cell = row.cells[1]
+        const name_input = document.createElement("input")
+        name_input.value = name_cell.innerText
+        name_cell.innerHTML=''
+        name_cell.appendChild(name_input)
+
+        const title_cell = row.cells[2]
+        const title_input = document.createElement("input")
+        title_input.value = title_cell.innerText
+        title_cell.innerHTML=''
+        title_cell.appendChild(title_input)
+
+        const race_cell = row.cells[3]
+        const race_selector = document.createElement("select")
+        let races = ['HUMAN', 'DWARF', 'ELF', 'GIANT', 'ORC', 'TROLL', 'HOBBIT']
+        races.map(function (race) {
+            const option = document.createElement("option");
+            option.value = race;
+            option.innerHTML = race;
+            race_selector.appendChild(option);
+            if (option.value === race_cell.innerText) {
+                option.selected = true
+            }
+        })
+        race_cell.innerHTML=''
+        race_cell.appendChild(race_selector)
+
+        const profession_cell = row.cells[4]
+        const profession_selector = document.createElement("select")
+        let professions = ['WARRIOR', 'ROGUE', 'SORCERER', 'CLERIC', 'PALADIN', 'NAZGUL', 'WARLOCK', 'DRUID']
+        professions.map(function (profession) {
+            const option = document.createElement("option");
+            option.value = profession;
+            option.innerHTML = profession;
+            profession_selector.appendChild(option);
+            if (option.value === profession_cell.innerText) {
+                option.selected = true
+            }
+        })
+        profession_cell.innerHTML=''
+        profession_cell.appendChild(profession_selector)
+
+        const banned_cell = row.cells[7]
+        const banned_selector = document.createElement("select")
+        let banned_values = ['true', 'false']
+        banned_values.map(function (banned_value) {
+            const option = document.createElement('option')
+            option.value = banned_value;
+            option.innerHTML = banned_value;
+            banned_selector.appendChild(option)
+            if (option.value === banned_cell.innerText) {
+                option.selected = true
+            }
+        })
+        banned_cell.innerHTML=''
+        banned_cell.appendChild(banned_selector)
+
+        const image = row.cells[8].firstChild
+        image.src = '/img/save.png'
+        image.onClick = postUser
+    }
+
+    function postUser() {
 
     }
 
@@ -157,31 +222,26 @@
     function putDataToTable(page_number) {
         $.getJSON('/rest/players', {pageNumber: page_number, pageSize: page_size}, function (data) {
             const tbody = document.createElement("tbody");
-            let odd = false;
             $.each(data, function () {
                 const tr = tbody.insertRow();
-                tr.className = odd ? "odd" : "even";
-                $.each(this, function (k, v) {
-                    const cell = tr.insertCell();
-                    cell.appendChild(document.createTextNode(v.toString()));
-                });
-                let img = document.createElement('img');
-                img.id = this.id
-                img.src = "/img/edit.png";
-                img.onclick = editUser
-                img.style.cursor = "pointer";
-                let cell = tr.insertCell();
-                cell.appendChild(img);
+                tr.id = 'row-' + this.id
 
-                img = document.createElement('img');
-                img.id = this.id
-                img.src = "/img/delete.png";
-                img.onclick = deleteUser
-                img.style.cursor = "pointer";
-                cell = tr.insertCell();
-                cell.appendChild(img);
+                const data = [this.id, this.name, this.title, this.race, this.profession, this.level, this.birthday, this.banned];
+                data.map(function (text) {
+                    tr.insertCell().appendChild(document.createTextNode(text));
+                })
 
-                odd = !odd;
+                function construct_image(id, src, onclick) {
+                    const img = document.createElement('img')
+                    img.id = id
+                    img.src = src
+                    img.onclick = onclick
+                    img.style.cursor = "pointer";
+                    return img
+                }
+
+                tr.insertCell().appendChild(construct_image(this.id, "/img/edit.png", editUser));
+                tr.insertCell().appendChild(construct_image(this.id, "/img/delete.png", deleteUser));
             });
             $("#admin-table").append(tbody);
         });
