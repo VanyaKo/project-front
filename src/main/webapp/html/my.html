@@ -20,9 +20,8 @@
 <h1>RPG admin panel</h1>
 <h2>Accounts list:</h2>
 <div>
-    <label for="count-per-page-selector">Count per page:</label>
-    <select id="count-per-page-selector"
-            onchange="count_per_page = this.value; renderTable(last_visited_page, this.value); pages=get_pages(); generateButtons(document.getElementById('pages'))">
+    <label for="page-size-selector">Count per page:</label>
+    <select id="page-size-selector" onchange="update_page_size(this.value)">
         <option typeof="numeric" value=3 selected="selected">3</option>
         <option typeof="numeric" value=5>5</option>
         <option typeof="numeric" value=10>10</option>
@@ -47,10 +46,70 @@
 </table>
 <div id="pages">Pages:</div>
 <script>
-    const players_count = get_players_count()
-    let count_per_page = get_count_per_page()
+    let players_count = get_players_count()
+    let page_size = get_page_size()
     let pages = get_pages()
     let last_visited_page = 0
+
+    function update_page_size(new_page_size) {
+        page_size = new_page_size
+        pages = get_pages();
+        renderTable(last_visited_page);
+        generateButtons(document.getElementById('pages'))
+        markCurrentPageButton(last_visited_page)
+    }
+
+    function get_page_size() {
+        return parseInt(document.getElementById("page-size-selector").value);
+    }
+
+    function get_pages() {
+        return Math.ceil(players_count / page_size)
+    }
+
+    function removeOldTable() {
+        const table = document.getElementById("admin-table");
+        let elementsByTagName = table.getElementsByTagName("tbody");
+        if (elementsByTagName.length > 0) {
+            table.removeChild(elementsByTagName[0]);
+        }
+    }
+
+    function markCurrentPageButton(page_number) {
+        document.getElementById("button-" + last_visited_page).classList.remove('selected-button')
+        if (last_visited_page > pages) {
+            page_number = pages - 1
+        }
+        document.getElementById("button-" + page_number).classList.add('selected-button')
+        last_visited_page = page_number
+        return page_number
+    }
+
+    function renderTable(page_number) {
+        page_number = markCurrentPageButton(page_number);
+        removeOldTable();
+        putDataToTable(page_number);
+    }
+
+    function generateButtons(context) {
+        const div = document.getElementById("pages");
+        div.innerHTML = 'Pages:';
+        for (let i = 0; i < pages; i++) {
+            const button = document.createElement("input");
+            button.id = "button-" + i;
+            button.type = "button";
+            button.value = i + '';
+            button.onclick = function () {
+                renderTable(i)
+            }
+            context.appendChild(button);
+        }
+    }
+
+    $(function () {
+        generateButtons(document.getElementById('pages'))
+        renderTable(0);
+    });
 
     function get_players_count() {
         let players_count
@@ -65,29 +124,15 @@
         return players_count
     }
 
-    function get_count_per_page() {
-        return parseInt(document.getElementById("count-per-page-selector").value);
+    function editUser() {
+
     }
 
-    function get_pages() {
-        return Math.ceil(players_count / count_per_page)
+    function deleteUser() {
+        $.delete(`/rest/players/${this.id}`)
     }
 
-    function removeExtraPageContent() {
-        const table = document.getElementById("admin-table");
-        let elementsByTagName = table.getElementsByTagName("tbody");
-        if (elementsByTagName.length > 0) {
-            table.removeChild(elementsByTagName[0]);
-        }
-    }
-
-    function markCurrentPageButton(page_number) {
-        document.getElementById("button-" + last_visited_page).classList.remove('selected-button')
-        document.getElementById("button-" + page_number).classList.add('selected-button')
-        last_visited_page = page_number
-    }
-
-    function putDataToTable(page_number, page_size) {
+    function putDataToTable(page_number) {
         $.getJSON('/rest/players', {pageNumber: page_number, pageSize: page_size}, function (data) {
             const tbody = document.createElement("tbody");
             let odd = false;
@@ -102,6 +147,7 @@
                 img.id = this.id
                 img.src = "/img/edit.png";
                 img.onclick = editUser
+                img.style.cursor = "pointer";
                 let cell = tr.insertCell();
                 cell.appendChild(img);
 
@@ -109,6 +155,7 @@
                 img.id = this.id
                 img.src = "/img/delete.png";
                 img.onclick = deleteUser
+                img.style.cursor = "pointer";
                 cell = tr.insertCell();
                 cell.appendChild(img);
 
@@ -116,40 +163,6 @@
             });
             $("#admin-table").append(tbody);
         });
-    }
-
-    function editUser() {
-
-    }
-
-    function deleteUser() {
-        $.delete(`/rest/players/${this.id}`)
-    }
-
-    function renderTable(page_number, page_size) {
-        removeExtraPageContent();
-        markCurrentPageButton(page_number);
-        putDataToTable(page_number, page_size);
-    }
-
-    $(function () {
-        generateButtons(document.getElementById('pages'))
-        renderTable(0);
-    });
-
-    function generateButtons(context) {
-        const div = document.getElementById("pages");
-        div.innerHTML = 'Pages:';
-        for (let i = 0; i < pages; i++) {
-            const button = document.createElement("input");
-            button.id = "button-" + i;
-            button.type = "button";
-            button.value = i + '';
-            button.onclick = function () {
-                renderTable(i, count_per_page)
-            }
-            context.appendChild(button);
-        }
     }
 </script>
 </body>
