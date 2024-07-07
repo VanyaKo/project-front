@@ -54,7 +54,7 @@
     function update_page_size(new_page_size) {
         page_size = new_page_size
         pages = get_pages();
-        renderTable(last_visited_page);
+        updateTable(last_visited_page);
         generateButtons(document.getElementById('pages'))
         markCurrentPageButton(last_visited_page)
     }
@@ -76,16 +76,27 @@
     }
 
     function markCurrentPageButton(page_number) {
-        document.getElementById("button-" + last_visited_page).classList.remove('selected-button')
+        let should_update_table = false
+        const previous_button = document.getElementById("button-" + last_visited_page);
+        if (previous_button != null) {
+            previous_button.classList.remove('selected-button')
+        } else {
+            should_update_table = true
+            last_visited_page--
+            page_number--
+        }
         if (last_visited_page > pages) {
             page_number = pages - 1
         }
         document.getElementById("button-" + page_number).classList.add('selected-button')
         last_visited_page = page_number
+        if (should_update_table) {
+            updateTable(page_number)
+        }
         return page_number
     }
 
-    function renderTable(page_number) {
+    function updateTable(page_number) {
         page_number = markCurrentPageButton(page_number);
         removeOldTable();
         putDataToTable(page_number);
@@ -100,7 +111,7 @@
             button.type = "button";
             button.value = i + '';
             button.onclick = function () {
-                renderTable(i)
+                updateTable(i)
             }
             context.appendChild(button);
         }
@@ -108,7 +119,7 @@
 
     $(function () {
         generateButtons(document.getElementById('pages'))
-        renderTable(0);
+        updateTable(0);
     });
 
     function get_players_count() {
@@ -129,7 +140,18 @@
     }
 
     function deleteUser() {
-        $.delete(`/rest/players/${this.id}`)
+        $.ajax({
+            type: "DELETE",
+            url: `/rest/players/${this.id}`,
+            async: false
+        });
+        players_count = get_players_count();
+        pages = get_pages()
+        updateTable(last_visited_page);
+        generateButtons(document.getElementById('pages'))
+
+        //TODO: fix bug. To reproduce it, subsequently remove users from the end - you will see wrongly rendered table
+        markCurrentPageButton(last_visited_page)
     }
 
     function putDataToTable(page_number) {
