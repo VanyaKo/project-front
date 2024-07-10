@@ -1,229 +1,229 @@
-let players_count = get_players_count()
-let page_size = get_page_size()
-let pages = get_pages()
-let last_visited_page = 0
+function showList(pageNumber) {
+    $('tr:has(td)').remove()
 
-function update_page_size(new_page_size) {
-    page_size = new_page_size
-    pages = get_pages();
-    updateTable(last_visited_page);
-    generateButtons(document.getElementById('pages'))
-    markCurrentPageButton(last_visited_page)
-}
+    const url = '/rest/players'
+    const pageSize = $('#page-size-selector').val();
 
-function get_page_size() {
-    return parseInt(document.getElementById("page-size-selector").value);
-}
+    $.get(url,
+        {'pageSize': pageSize, 'pageNumber': pageNumber || 0},
+        function (response) {
+            $.each(response, function (i, user) {
+                $('<tr>').html(
+                    `<td>${user.id}</td>`
+                    + `<td>${user.name}</td>`
+                    + `<td>${user.title}</td>`
+                    + `<td>${user.race}</td>`
+                    + `<td>${user.profession}</td>`
+                    + `<td>${user.level}</td>`
+                    + `<td>${new Date(user.birthday).toLocaleDateString()}</td>`
+                    + `<td>${user.banned}</td>`
+                    + '<td>'
+                    + `<button id="edit-button-${user.id}" onclick="editUser(${user.id})">`
+                    + '<img src="/img/edit.png" alt="edit">'
+                    + '</button>'
+                    + '</td>'
+                    + '<td>'
+                    + `<button id="delete-button-${user.id}" onclick="deleteUser(${user.id})">`
+                    + '<img src="/img/delete.png" alt="delete">'
+                    + '</button>'
+                    + '</td>'
+                ).appendTo('#admin-table')
+            });
+        }
+    )
 
-function get_pages() {
-    return Math.ceil(players_count / page_size)
-}
+    const totalCount = getTotalCount()
+    const pages = Math.ceil(totalCount / pageSize)
 
-function removeOldTable() {
-    const table = document.getElementById("admin-table");
-    let elementsByTagName = table.getElementsByTagName("tbody");
-    if (elementsByTagName.length > 0) {
-        table.removeChild(elementsByTagName[0]);
-    }
-}
-
-function markCurrentPageButton(page_number) {
-    let should_update_table = false
-    const previous_button = document.getElementById("button-" + last_visited_page);
-    if (previous_button != null) {
-        previous_button.classList.remove('selected-button')
-    } else {
-        should_update_table = true
-        last_visited_page--
-        page_number--
-    }
-    if (last_visited_page > pages) {
-        page_number = pages - 1
-    }
-    document.getElementById("button-" + page_number).classList.add('selected-button')
-    last_visited_page = page_number
-    if (should_update_table) {
-        updateTable(page_number)
-    }
-    return page_number
-}
-
-function updateTable(page_number) {
-    page_number = markCurrentPageButton(page_number);
-    removeOldTable();
-    putDataToTable(page_number);
-}
-
-function generateButtons(context) {
-    const div = document.getElementById("pages");
-    div.innerHTML = 'Pages:';
+    $('button.unselected-paging-button').remove()
     for (let i = 0; i < pages; i++) {
-        const button = document.createElement("input");
-        button.id = "button-" + i;
-        button.type = "button";
-        button.value = i + '';
-        button.onclick = function () {
-            updateTable(i)
-        }
-        context.appendChild(button);
+        const buttonTag = `<button>${i + 1}</button>`
+        const button = $(buttonTag)
+            .attr('id', 'paging-button-' + i)
+            .attr('onclick', `showList(${i})`)
+            .addClass('unselected-paging-button')
+        $('#paging-buttons').append(button)
     }
+
+    const pagingButtonId = '#paging-button-' + pageNumber
+    $(pagingButtonId).css({'color': 'red', 'font-weight': 'bold'})
 }
 
-$(function () {
-    generateButtons(document.getElementById('pages'))
-    updateTable(0);
-});
-
-function get_players_count() {
-    let players_count
+function getTotalCount() {
+    const url = '/rest/players/count'
+    let res = 0
     $.ajax({
-        type: "GET",
-        url: "/rest/players/count",
-        success: function (data) {
-            players_count = data
+        url: url,
+        async: false,
+        success: function (result) {
+            res = parseInt(result)
+        }
+    })
+    return res
+}
+
+//TODO: update when delete last user from page
+function deleteUser(id) {
+    const url = `/rest/players/${id}`
+    $.ajax({
+        url: url,
+        type: 'DELETE',
+        success: function () {
+            showList(getCurrentPage())
         },
-        async: false
-    });
-    return players_count
+    })
 }
 
-function editUser() {
-    const id_number = this.id.slice(this.id.indexOf('-') + 1)
-    const row = document.getElementById('row-' + id_number)
+function editUser(id) {
+    const editButtonId = `#edit-button-${id}`
+    const deleteButtonId = `#delete-button-${id}`
 
-    if (row.cells[1].firstElementChild === null) {
-        function create_input_field(cell) {
-            const input = document.createElement("input")
-            input.type = "text"
-            input.value = cell.innerText
-            return input
-        }
+    $(deleteButtonId).remove()
 
-        const name_cell = row.cells[1]
-        const name_input = create_input_field(name_cell)
-        name_cell.innerHTML = ''
-        name_cell.appendChild(name_input)
+    const saveImageTag = '<img src="/img/save.png" alt="save">'
+    $(editButtonId).html(saveImageTag)
 
-        const title_cell = row.cells[2]
-        const title_input = create_input_field(title_cell)
-        title_cell.innerHTML = ''
-        title_cell.appendChild(title_input)
+    const currentTrElement = $(editButtonId).parent().parent()
+    const children = currentTrElement.children()
 
-        function create_selector(cell, values) {
-            const selector = document.createElement("select")
-            values.map(function (value) {
-                const option = document.createElement("option");
-                option.value = value;
-                option.innerHTML = value;
-                selector.appendChild(option);
-                if (option.value === cell.innerText) {
-                    option.selected = true
-                }
-            })
-            return selector
-        }
+    const tdName = children[1]
+    tdName.innerHTML = `<input id="input-name-${id}" type="text" value="${tdName.innerHTML}">`
 
-        const race_cell = row.cells[3]
-        const race_selector = create_selector(race_cell, ['HUMAN', 'DWARF', 'ELF', 'GIANT', 'ORC', 'TROLL', 'HOBBIT'])
-        race_cell.innerHTML = ''
-        race_cell.appendChild(race_selector)
+    const tdTitle = children[2]
+    tdTitle.innerHTML = `<input id="input-title-${id}" type="text" value="${tdTitle.innerHTML}">`
 
-        const profession_cell = row.cells[4]
-        const profession_selector = create_selector(profession_cell, ['WARRIOR', 'ROGUE', 'SORCERER', 'CLERIC', 'PALADIN', 'NAZGUL', 'WARLOCK', 'DRUID'])
-        profession_cell.innerHTML = ''
-        profession_cell.appendChild(profession_selector)
+    const tdRace = children[3]
+    const raceId = '#select-race-' + id
+    const raceCurrentValue = tdRace.innerHTML
+    tdRace.innerHTML = getDropdownRaceHtml(id)
+    $(raceId).val(raceCurrentValue).change()
 
-        const banned_cell = row.cells[7]
-        const banned_selector = create_selector(banned_cell, ['true', 'false'])
-        banned_cell.innerHTML = ''
-        banned_cell.appendChild(banned_selector)
+    const tdProfession = children[4]
+    const professionId = '#select-profession-' + id
+    const professionCurrentValue = tdProfession.innerHTML
+    tdProfession.innerHTML = getDropdownProfessionHtml(id)
+    $(professionId).val(professionCurrentValue).change()
 
-        const image = row.cells[8].firstChild
-        image.src = '/img/save.png'
-    } else {
-        $.ajax({
-            type: "POST",
-            dataType: "json",
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify({
-                name: row.cells[1].firstElementChild.value,
-                title: row.cells[2].firstElementChild.value,
-                race: row.cells[3].firstElementChild.value,
-                profession: row.cells[4].firstElementChild.value,
-                banned: row.cells[7].firstElementChild.value,
-            }),
-            url: `/rest/players/${id_number}`,
-            async: false
-        });
+    const tdBanned = children[7]
+    const bannedId = '#select-banned-' + id
+    const bannedCurrentValue = tdBanned.innerHTML
+    tdBanned.innerHTML = getDropdownBannedHtml(id)
+    $(bannedId).val(bannedCurrentValue).change()
 
-        updateTable(last_visited_page);
-        generateButtons(document.getElementById('pages'))
-        markCurrentPageButton(last_visited_page)
-    }
+    const propertySaveTag = `saveUser(${id})`
+    $(editButtonId).attr('onclick', propertySaveTag)
 }
 
-function postUser() {
-    const data = JSON.stringify({
-            name: document.getElementById('post-name').value,
-            title: document.getElementById('post-title').value,
-            race: document.getElementById('post-race').value,
-            profession: document.getElementById('post-profession').value,
-            level: document.getElementById('post-level').value,
-            birthday: new Date(document.getElementById('post-birthday').value).getTime(),
-            banned: document.getElementById('post-banned').value
-        })
+function createUser() {
+    const valueName = $('#input-name-new').val()
+    const valueTitle = $('#input-title-new').val()
+    const valueRace = $('#select-race-new').val()
+    const valueProfession = $('#select-profession-new').val()
+    const valueLevel = $('#input-level-new').val()
+    const valueBirthday = $('#input-birthday-new').val()
+    const valueBanned = $('#select-banned-new').val()
+
+    const url = '/rest/players'
     $.ajax({
+        url: url,
         type: 'POST',
         dataType: 'json',
-        contentType: "application/json; charset=utf-8",
-        data: data,
-        url: "/rest/players/"
-    });
+        contentType: 'application/json;charset=UTF-8',
+        async: false,
+        data: JSON.stringify({
+            "name": valueName,
+            "title": valueTitle,
+            "race": valueRace,
+            "profession": valueProfession,
+            "level": valueLevel,
+            "birthday": new Date(valueBirthday).getTime(),
+            "banned": valueBanned
+        }),
+        success: function () {
+            $('#input-name-new').val("")
+            $('#input-title-new').val("")
+            $('#select-race-new').val("")
+            $('#select-profession-new').val("")
+            $('#input-level-new').val("")
+            $('#input-birthday-new').val("")
+            $('#select-banned-new').val("")
+            showList(getCurrentPage())
+        }
+    })
 }
 
-function deleteUser() {
+function saveUser(id) {
+    const valueName = $('#input-name-' + id).val()
+    const valueTitle = $('#input-title-' + id).val()
+    const valueRace = $('#select-race-' + id).val()
+    const valueProfession = $('#select-profession-' + id).val()
+    const valueBanned = $('#select-banned-' + id).val()
+
+    const url = `/rest/players/${id}`
     $.ajax({
-        type: "DELETE",
-        url: `/rest/players/${this.id}`,
-        async: false
-    });
-    players_count = get_players_count();
-    pages = get_pages()
-    updateTable(last_visited_page);
-    generateButtons(document.getElementById('pages'))
-
-    //TODO: fix bug. To reproduce it, subsequently remove users from the end - you will see wrongly rendered table
-    markCurrentPageButton(last_visited_page)
+        url: url,
+        type: 'POST',
+        dataType: 'json',
+        contentType: 'application/json;charset=UTF-8',
+        async: false,
+        data: JSON.stringify({
+            "name": valueName,
+            "title": valueTitle,
+            "race": valueRace,
+            "profession": valueProfession,
+            "banned": valueBanned
+        }),
+        success: function () {
+            showList(getCurrentPage())
+        }
+    })
 }
 
-function putDataToTable(page_number) {
-    $.getJSON('/rest/players', {pageNumber: page_number, pageSize: page_size}, function (data) {
-        const tbody = document.createElement("tbody");
-        $.each(data, function () {
-            const tr = tbody.insertRow();
-            tr.id = 'row-' + this.id
+// TODO: ass style for button specifically in css file
+function getDropdownRaceHtml(id) {
+    const raceId = 'select-race-' + id;
+    return '<label for="race"></label>'
+        + `<select id="${raceId}" name="race">`
+        + '<option value="HUMAN">HUMAN</option>'
+        + '<option value="DWARF">DWARF</option>'
+        + '<option value="ELF">ELF</option>'
+        + '<option value="GIANT">GIANT</option>'
+        + '<option value="ORC">ORC</option>'
+        + '<option value="TROLL">TROLL</option>'
+        + '<option value="HOBBIT">HOBBIT</option>'
+        + '</select>'
+}
 
-            const data = [this.id, this.name, this.title, this.race, this.profession, this.level, this.birthday, this.banned];
-            for (let i = 0; i < data.length; i++) {
-                let value = data[i]
-                if (i === 6) {
-                    value = new Date(parseInt(value, 10)).toLocaleDateString()
-                }
-                tr.insertCell().appendChild(document.createTextNode(value));
-            }
+function getDropdownProfessionHtml(id) {
+    const professionId = 'select-profession-' + id;
+    return '<label for="profession"></label>'
+        + `<select id="${professionId}" name="profession">`
+        + '<option value="WARRIOR">WARRIOR</option>'
+        + '<option value="ROGUE">ROGUE</option>'
+        + '<option value="SORCERER">SORCERER</option>'
+        + '<option value="CLERIC">CLERIC</option>'
+        + '<option value="PALADIN">PALADIN</option>'
+        + '<option value="NAZGUL">NAZGUL</option>'
+        + '<option value="WARLOCK">WARLOCK</option>'
+        + '<option value="DRUID">DRUID</option>'
+        + '</select>'
+}
 
-            function construct_image(id, src, onclick) {
-                const img = document.createElement('img')
-                img.id = id
-                img.src = src
-                img.onclick = onclick
-                img.style.cursor = "pointer";
-                return img
-            }
+function getDropdownBannedHtml(id) {
+    const bannedId = 'select-banned-' + id;
+    return '<label for="banned"></label>'
+        + `<select id="${bannedId}" name="banned">`
+        + '<option value="false">false</option>'
+        + '<option value="true">true</option>'
+        + '</select>'
+}
 
-            tr.insertCell().appendChild(construct_image(`edit-${this.id}`, "/img/edit.png", editUser));
-            tr.insertCell().appendChild(construct_image(`delete-${this.id}`, "/img/delete.png", deleteUser));
-        });
-        $("#admin-table").append(tbody);
+function getCurrentPage() {
+    let currentPage = 1;
+    $('button:parent(div)').each(function () {
+        if ($(this).css('color') === 'rgb(255, 0, 0)') {
+            currentPage = $(this).text();
+        }
     });
+    return parseInt(currentPage) - 1
 }

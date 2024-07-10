@@ -1,13 +1,9 @@
 th, td {
-    border: 1px solid;
+    border: 1px solid black;
+    padding: 3px;
 }
 
-.unselected-button {
+unselected-paging-button {
     font-weight: normal;
     color: black;
-}
-
-.selected-button {
-    font-weight: bold;
-    color: red;
 }
