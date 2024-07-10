@@ -199,14 +199,18 @@
                 contentType: "application/json; charset=utf-8",
                 data: JSON.stringify({
                     name: row.cells[1].firstElementChild.value,
-                    title: row.cells[2].firstElementChild.value
-                    // "race": JSON.stringify(row.cells[3].firstElementChild.value),
-                    // "profession": JSON.stringify(row.cells[4].firstElementChild.value),
-                    // "banned": JSON.stringify(row.cells[7].firstElementChild.value),
+                    title: row.cells[2].firstElementChild.value,
+                    race: row.cells[3].firstElementChild.value,
+                    profession:row.cells[4].firstElementChild.value,
+                    banned:row.cells[7].firstElementChild.value,
                 }),
                 url: `/rest/players/${id_number}`,
                 async: false
             });
+
+            updateTable(last_visited_page);
+            generateButtons(document.getElementById('pages'))
+            markCurrentPageButton(last_visited_page)
         }
     }
 
