@@ -1,0 +1,13 @@
+th, td {
+    border: 1px solid;
+}
+
+.unselected-button {
+    font-weight: normal;
+    color: black;
+}
+
+.selected-button {
+    font-weight: bold;
+    color: red;
+}
