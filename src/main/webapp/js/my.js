@@ -1,8 +1,9 @@
+const htmlRenderService = new HtmlRenderService()
 const PLAYERS_URL = '/rest/players'
 
 function showButtons(pages) {
     $('button.unselected-paging-button').remove()
-    renderPagingButtons(pages);
+    htmlRenderService.renderPagingButtons(pages);
 }
 
 function markCurrentPagingButton(pageNumber) {
@@ -22,7 +23,7 @@ function showList(pageNumber) {
                 showList(--pageNumber)
             }
             $.each(response, function (i, user) {
-                renderTableRaw(user);
+                htmlRenderService.renderTableRaw(user);
             });
         }
     )
@@ -62,7 +63,7 @@ function editUser(id) {
     const deleteButtonId = `#delete-button-${id}`
 
     $(deleteButtonId).remove()
-    renderEditRaw(editButtonId, id);
+    htmlRenderService.renderEditRaw(editButtonId, id);
 }
 
 function createUser() {
