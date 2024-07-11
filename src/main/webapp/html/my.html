@@ -1,11 +1,91 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <title>RPG</title>
     <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
+    <script defer src="/js/my.js"></script>
+    <script defer src="/js/htmlRenderService.js"></script>
     <link href="/css/my.css" rel="stylesheet">
 </head>
-<body>
+<body onload="showList(0)">
 <h1>RPG admin panel</h1>
+
+<h2>Accounts list:</h2>
+
+<label for="page-size-selector">Count per page:</label>
+<select id="page-size-selector" onchange="showList(0)">
+    <option value=3 selected="selected">3</option>
+    <option value=5>5</option>
+    <option value=10>10</option>
+    <option value=20>20</option>
+</select>
+
+<table id="admin-table">
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Title</th>
+        <th>Race</th>
+        <th>Profession</th>
+        <th>Level</th>
+        <th>Birthday</th>
+        <th>Banned</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+    </thead>
+</table>
+<div id="paging-buttons">Pages:</div>
+
+<hr>
+<h2>Create new account:</h2>
+
+<label for="input-name-new">Name:</label>
+<input type="text" id="input-name-new" required size="12" maxlength="12">
+<br>
+<label for="input-title-new">Title:</label>
+<input type="text" id="input-title-new" required size="30" maxlength="30">
+<br>
+<label for="select-race-new">Race:</label>
+<select id="select-race-new" name="race">
+    <option value="HUMAN">HUMAN</option>
+    <option value="DWARF">DWARF</option>
+    <option value="ELF">ELF</option>
+    <option value="GIANT">GIANT</option>
+    <option value="ORC">ORC</option>
+    <option value="TROLL">TROLL</option>
+    <option value="HOBBIT">HOBBIT</option>
+</select>
+<br>
+<label for="select-profession-new">Profession:</label>
+<select id="select-profession-new" name="profession">
+    <option value="WARRIOR">WARRIOR</option>
+    <option value="ROGUE">ROGUE</option>
+    <option value="SORCERER">SORCERER</option>
+    <option value="CLERIC">CLERIC</option>
+    <option value="PALADIN">PALADIN</option>
+    <option value="NAZGUL">NAZGUL</option>
+    <option value="WARLOCK">WARLOCK</option>
+    <option value="DRUID">DRUID</option>
+</select>
+<br>
+<label for="input-level-new">Level:</label>
+<input type="number" id="input-level-new" name="level" min="0" max="100">
+<br>
+<label for="input-birthday-new">Birthday:</label>
+<input type="date" id="input-birthday-new" name="birthday" min="2000-01-01" max="3000-12-31">
+<br>
+<label for="select-banned-new">Banned:</label>
+<select id="select-banned-new" name="banned">
+    <option value="false">false</option>
+    <option value="true">true</option>
+</select>
+<p>
+   <span>
+    <button type="submit" onclick="createUser()">Save</button>
+</span>
+</p>
 
 </body>
 </html>

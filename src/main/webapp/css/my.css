@@ -1,0 +1,9 @@
+th, td {
+    border: 1px solid black;
+    padding: 3px;
+}
+
+button.unselected-paging-button {
+    font-weight: normal;
+    color: black;
+}
