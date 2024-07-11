@@ -3,7 +3,7 @@ th, td {
     padding: 3px;
 }
 
-unselected-paging-button {
+button.unselected-paging-button {
     font-weight: normal;
     color: black;
 }

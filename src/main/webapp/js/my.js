@@ -1,12 +1,33 @@
+const PLAYERS_URL = '/rest/players'
+
+function showButtons(pages) {
+    $('button.unselected-paging-button').remove()
+    for (let i = 0; i < pages; i++) {
+        const buttonTag = `<button>${i + 1}</button>`
+        const button = $(buttonTag)
+            .attr('id', 'paging-button-' + i)
+            .attr('onclick', `showList(${i})`)
+            .addClass('unselected-paging-button')
+        $('#paging-buttons').append(button)
+    }
+}
+
+function markCurrentPagingButton(pageNumber) {
+    const pagingButtonId = '#paging-button-' + pageNumber
+    $(pagingButtonId).css({'color': 'red', 'font-weight': 'bold'})
+}
+
 function showList(pageNumber) {
     $('tr:has(td)').remove()
 
-    const url = '/rest/players'
     const pageSize = $('#page-size-selector').val();
 
-    $.get(url,
+    $.get(PLAYERS_URL,
         {'pageSize': pageSize, 'pageNumber': pageNumber || 0},
         function (response) {
+            if (response.length === 0) {
+                showList(--pageNumber)
+            }
             $.each(response, function (i, user) {
                 $('<tr>').html(
                     `<td>${user.id}</td>`
@@ -34,23 +55,12 @@ function showList(pageNumber) {
 
     const totalCount = getTotalCount()
     const pages = Math.ceil(totalCount / pageSize)
-
-    $('button.unselected-paging-button').remove()
-    for (let i = 0; i < pages; i++) {
-        const buttonTag = `<button>${i + 1}</button>`
-        const button = $(buttonTag)
-            .attr('id', 'paging-button-' + i)
-            .attr('onclick', `showList(${i})`)
-            .addClass('unselected-paging-button')
-        $('#paging-buttons').append(button)
-    }
-
-    const pagingButtonId = '#paging-button-' + pageNumber
-    $(pagingButtonId).css({'color': 'red', 'font-weight': 'bold'})
+    showButtons(pages);
+    markCurrentPagingButton(pageNumber);
 }
 
 function getTotalCount() {
-    const url = '/rest/players/count'
+    const url = `${PLAYERS_URL}/count`
     let res = 0
     $.ajax({
         url: url,
@@ -62,9 +72,8 @@ function getTotalCount() {
     return res
 }
 
-//TODO: update when delete last user from page
 function deleteUser(id) {
-    const url = `/rest/players/${id}`
+    const url = `${PLAYERS_URL}/${id}`
     $.ajax({
         url: url,
         type: 'DELETE',
@@ -95,19 +104,19 @@ function editUser(id) {
     const tdRace = children[3]
     const raceId = '#select-race-' + id
     const raceCurrentValue = tdRace.innerHTML
-    tdRace.innerHTML = getDropdownRaceHtml(id)
+    tdRace.innerHTML = getDropdownHtml(id, 'race', ['HUMAN', 'DWARF', 'ELF', 'GIANT', 'ORC', 'TROLL', 'HOBBIT'])
     $(raceId).val(raceCurrentValue).change()
 
     const tdProfession = children[4]
     const professionId = '#select-profession-' + id
     const professionCurrentValue = tdProfession.innerHTML
-    tdProfession.innerHTML = getDropdownProfessionHtml(id)
+    tdProfession.innerHTML = getDropdownHtml(id, 'profession', ['WARRIOR', 'ROGUE', 'SORCERER', 'CLERIC', 'PALADIN', 'NAZGUL', 'WARLOCK', 'DRUID'])
     $(professionId).val(professionCurrentValue).change()
 
     const tdBanned = children[7]
     const bannedId = '#select-banned-' + id
     const bannedCurrentValue = tdBanned.innerHTML
-    tdBanned.innerHTML = getDropdownBannedHtml(id)
+    tdBanned.innerHTML = getDropdownHtml(id, 'banned', [false, true])
     $(bannedId).val(bannedCurrentValue).change()
 
     const propertySaveTag = `saveUser(${id})`
@@ -123,9 +132,8 @@ function createUser() {
     const valueBirthday = $('#input-birthday-new').val()
     const valueBanned = $('#select-banned-new').val()
 
-    const url = '/rest/players'
     $.ajax({
-        url: url,
+        url: PLAYERS_URL,
         type: 'POST',
         dataType: 'json',
         contentType: 'application/json;charset=UTF-8',
@@ -159,7 +167,7 @@ function saveUser(id) {
     const valueProfession = $('#select-profession-' + id).val()
     const valueBanned = $('#select-banned-' + id).val()
 
-    const url = `/rest/players/${id}`
+    const url = `${PLAYERS_URL}/${id}`
     $.ajax({
         url: url,
         type: 'POST',
@@ -178,44 +186,14 @@ function saveUser(id) {
         }
     })
 }
+function getDropdownHtml(id, name, values) {
+    const nameId = `select-${name}-` + id;
+    let dropdownHtml = `<label for="${name}"></label>` + `<select id="${nameId}" name=${name}>`;
 
-// TODO: ass style for button specifically in css file
-function getDropdownRaceHtml(id) {
-    const raceId = 'select-race-' + id;
-    return '<label for="race"></label>'
-        + `<select id="${raceId}" name="race">`
-        + '<option value="HUMAN">HUMAN</option>'
-        + '<option value="DWARF">DWARF</option>'
-        + '<option value="ELF">ELF</option>'
-        + '<option value="GIANT">GIANT</option>'
-        + '<option value="ORC">ORC</option>'
-        + '<option value="TROLL">TROLL</option>'
-        + '<option value="HOBBIT">HOBBIT</option>'
-        + '</select>'
-}
-
-function getDropdownProfessionHtml(id) {
-    const professionId = 'select-profession-' + id;
-    return '<label for="profession"></label>'
-        + `<select id="${professionId}" name="profession">`
-        + '<option value="WARRIOR">WARRIOR</option>'
-        + '<option value="ROGUE">ROGUE</option>'
-        + '<option value="SORCERER">SORCERER</option>'
-        + '<option value="CLERIC">CLERIC</option>'
-        + '<option value="PALADIN">PALADIN</option>'
-        + '<option value="NAZGUL">NAZGUL</option>'
-        + '<option value="WARLOCK">WARLOCK</option>'
-        + '<option value="DRUID">DRUID</option>'
-        + '</select>'
-}
-
-function getDropdownBannedHtml(id) {
-    const bannedId = 'select-banned-' + id;
-    return '<label for="banned"></label>'
-        + `<select id="${bannedId}" name="banned">`
-        + '<option value="false">false</option>'
-        + '<option value="true">true</option>'
-        + '</select>'
+    values.map(function (value) {
+        dropdownHtml += `<option value="${value}">${value}</option>`
+    })
+    return dropdownHtml + '</select>'
 }
 
 function getCurrentPage() {
